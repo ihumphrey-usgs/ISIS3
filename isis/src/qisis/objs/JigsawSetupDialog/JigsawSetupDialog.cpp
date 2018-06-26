@@ -1341,7 +1341,11 @@ namespace Isis {
     }
     else {
       item->setData(Qt::UserRole, QVariant(false));
-      item->setBackground(Qt::red);
+      QBrush brush(Qt::red, Qt::BDiagPattern);
+      QFont font = item->font();
+      font.setBold(true);
+      item->setFont(font);
+      item->setBackground(brush);
     }
 
     validateSigmaTables();
@@ -1378,7 +1382,36 @@ namespace Isis {
     }
 
     m_ui->okCloseButtonBox->button(QDialogButtonBox::Ok)->setEnabled(tablesAreValid);
-    m_ui->applySettingsPushButton->setEnabled(tablesAreValid);
+
+    QPushButton *applyButton = m_ui->applySettingsPushButton;
+    if (tablesAreValid) {
+      applyButton->setText("Apply Settings to Selected Images");
+      disconnect(m_ui->applySettingsPushButton, SIGNAL(clicked()),
+              this, SLOT(resetInvalidSigmaValues()));
+    }
+    else {
+      applyButton->setText("Reset All Invalid Sigma Values to 0.0");
+      font.setColor
+      connect(m_ui->applySettingsPushButton, SIGNAL(clicked()),
+              this, SLOT(resetInvalidSigmaValues()));
+    }
+  }
+
+
+  void JigsawSetupDialog::resetInvalidSigmaValues() {
+    QTableWidget *positionTable = m_ui->positionAprioriSigmaTable;
+
+    for (int i = 0; i < positionTable->rowCount(); i++) {
+      QTableWidgetItem *item = positionTable->item(i, 3);
+      if (item) {
+        if (item->data(Qt::UserRole).toBool() == false) {
+          // recall that chaging the value of the table is connected to validateSigmaValue()
+          // (see constructor)
+          item->setText("0.0");
+          item->setData(Qt::UserRole, QVariant(true));
+        }
+      }
+    }
   }
 
 

@@ -149,6 +149,7 @@ namespace Isis {
 
     void validateSigmaValue(QTableWidgetItem *);
     void validateSigmaTables();
+    void resetInvalidSigmaValues();
     
 
     public slots:

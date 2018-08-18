@@ -16,6 +16,7 @@
 #include <geos/io/WKTWriter.h>
 
 #include "Angle.h"
+#include "Camera.h"
 #include "Cube.h"
 #include "CubeAttribute.h"
 #include "DisplayProperties.h"
@@ -54,6 +55,9 @@ namespace Isis {
     m_fileName = imageFileName;
 
     cube();
+    m_cameraType = m_cube->camera()->GetCameraType();
+    m_observationNumber = ObservationNumber::Compose(*(cube()));
+    m_serialNumber = SerialNumber::Compose(*(cube()));
 
     initCamStats();
 
@@ -87,6 +91,10 @@ namespace Isis {
     m_resolution = Null;
     m_lineResolution = Null;
     m_sampleResolution = Null;
+
+    m_cameraType = m_cube->camera()->GetCameraType();
+    m_observationNumber = ObservationNumber::Compose(*(cube()));
+    m_serialNumber = SerialNumber::Compose(*(cube()));
 
     initCamStats();
 
@@ -267,6 +275,15 @@ namespace Isis {
     return m_cube;
   }
 
+
+  /**
+   * @brief Get the camera type for this Image.
+   *
+   * @return Camera::CameraType Returns the camera type for this Image.
+   */
+  Camera::CameraType Image::cameraType() const {
+    return m_cameraType;
+  }
 
   /**
    * @brief Cleans up the Cube pointer.
@@ -597,9 +614,12 @@ namespace Isis {
       const {
     stream.writeStartElement("image");
 
+    stream.writeAttribute("cameraType", QString::number(m_cameraType));
     stream.writeAttribute("id", m_id->toString());
     stream.writeAttribute("fileName", FileName(m_fileName).name());
     stream.writeAttribute("instrumentId", m_instrumentId);
+    stream.writeAttribute("observationNumber", m_observationNumber);
+    stream.writeAttribute("serialNumber", m_serialNumber);
     stream.writeAttribute("spacecraftName", m_spacecraftName);
 
     if (!IsSpecial(m_aspectRatio) ) {
@@ -825,9 +845,12 @@ namespace Isis {
 
     if (XmlStackedHandler::startElement(namespaceURI, localName, qName, atts)) {
       if (localName == "image") {
+        QString cameraType = atts.value("cameraType");
         QString id = atts.value("id");
         QString fileName = atts.value("fileName");
         QString instrumentId = atts.value("instrumentId");
+        QString observationNumber = atts.value("observationNumber");
+        QString serialNumber = atts.value("serialNumber");
         QString spacecraftName = atts.value("spacecraftName");
 
         QString aspectRatioStr = atts.value("aspectRatio");
@@ -839,6 +862,28 @@ namespace Isis {
         QString northAzimuthStr = atts.value("northAzimuth");
         QString phaseAngleStr = atts.value("phaseAngle");
         QString sampleResolutionStr = atts.value("sampleResolution");
+
+        if (!cameraType.isEmpty()) {
+          switch (cameraType.toInt()) {
+            case 0:
+              m_image->m_cameraType = Camera::CameraType::Framing;
+              break;
+            case 1:
+              m_image->m_cameraType = Camera::CameraType::PushFrame;
+              break;
+            case 2:
+              m_image->m_cameraType = Camera::CameraType::LineScan;
+              break;
+            case 3:
+              m_image->m_cameraType = Camera::CameraType::Radar;
+              break;
+            case 4:
+              m_image->m_cameraType = Camera::CameraType::Point;
+              break;
+            default:
+              break;
+          }
+        }
 
         if (!id.isEmpty()) {
           delete m_image->m_id;
@@ -886,12 +931,20 @@ namespace Isis {
           m_image->m_northAzimuth = Angle(northAzimuthStr.toDouble(), Angle::Radians);
         }
 
+        if (!observationNumber.isEmpty()) {
+          m_image->m_observationNumber = observationNumber;
+        }
+
         if (!phaseAngleStr.isEmpty()) {
           m_image->m_phaseAngle = Angle(phaseAngleStr.toDouble(), Angle::Radians);
         }
 
         if (!sampleResolutionStr.isEmpty()) {
           m_image->m_sampleResolution = sampleResolutionStr.toDouble();
+        }
+
+        if (!serialNumber.isEmpty()) {
+          m_image->m_serialNumber = serialNumber;
         }
       }
       else if (localName == "displayProperties") {

@@ -22,6 +22,9 @@
 
 #include "CameraFactory.h"
 
+#include <QMutex>
+#include <QMutexLocker>
+
 #include "Camera.h"
 #include "Plugin.h"
 #include "IException.h"
@@ -31,6 +34,7 @@ using namespace std;
 
 namespace Isis {
   Plugin CameraFactory::m_cameraPlugin;
+  QMutex CameraFactory::m_mutex;
 
   /**
    * Creates a Camera object using Pvl Specifications
@@ -44,6 +48,7 @@ namespace Isis {
    * @throws Isis::iException::Camera - Unable to initialize camera model
    */
   Camera *CameraFactory::Create(Cube &cube) {
+    QMutexLocker lock(&m_mutex);
     // Try to load a plugin file in the current working directory and then
     // load the system file
     initPlugin();

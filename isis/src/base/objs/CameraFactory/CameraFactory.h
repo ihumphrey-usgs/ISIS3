@@ -21,6 +21,8 @@
  *   http://isis.astrogeology.usgs.gov, and the USGS privacy and disclaimers on
  *   http://www.usgs.gov/privacy.html.
  */
+#include <QMutex>
+
 #include "Plugin.h"
 
 namespace Isis {
@@ -81,6 +83,7 @@ namespace Isis {
       ~CameraFactory() {};
 
       static Plugin m_cameraPlugin;   //!< The plugin file for the camera
+      static QMutex m_mutex;
   };
 };
 
